@@ -1,0 +1,35 @@
+<div class="row" style="width: 100%;">
+   <div class="full-width column">
+      <div>
+         <!--p>Proposed grade is {{proposed}}!' </p-->
+         <div class="divFlex">
+            <!--Item Number Lookup-->
+            <label id="label-search">Item Number</label>
+            <input id="itemnoLookup" style="width: 142px; height: 32px; font-size: 12px;display: inline-block;"
+               soho-lookup soho-busyindicator [(ngModel)]="modelSelected.Itemno" class="ml-1" [columns]="itemnoColumns"
+               [dataset]="itemnoitems" (change)="onChangeLookupItem($event)" field="ITNO" title="ItemNo"
+               name="ItemNo" />
+         </div>
+         <div class="divFlex">
+            <!--Lot Number Lookup-->
+            <label id="label-search">Lot Number</label>
+            <input id="lotnoLookup" style="width: 142px; height: 32px; font-size: 12px;display: inline-block;"
+               soho-lookup soho-busyindicator [(ngModel)]="modelSelected.Lotno" class="ml-1" [columns]="lotnoColumns"
+               [dataset]="lotnoitems" (change)="onChangeLookupLot($event)" field="BANO" title="LotNo" name="LotNo"
+               [disabled]="!isITNOselected" />
+         </div>
+         <div class="divFlex">
+            <!--New Item Number Lookup-->
+            <label id="label-search">New Item Number</label>
+            <input id="nitemnoLookup" style="width: 142px; height: 32px; font-size: 12px;display: inline-block;"
+               soho-lookup soho-busyindicator [(ngModel)]="modelSelected.NItemno" class="ml-1"
+               [columns]="nitemnoColumns" [dataset]="nitemnoitems" (change)="onChangeLookupNItem($event)" field="ITNO"
+               title="NItemNo" name="NItemNo" />
+         </div>
+         <br />
+      </div>
+   </div>
+</div>
+
+<!-- div #dialogPlaceholder will contain the child component -->
+<div #dialogPlaceholder></div>

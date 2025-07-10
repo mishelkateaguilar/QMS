@@ -1,0 +1,141 @@
+<div page-container full-width full-height style="overflow-y: hidden; height: 100%;">
+   <div class="row card full-width" style="margin-bottom: 0px; max-height: 360px;">
+      <div id=" lefttab" class="nine columns">
+         <!--QMS QI Request-->
+         <div class="card auto-height" class="three columns">
+            <div class="divFlex" style="margin-top: 45px;">
+               <!--Facility Lookup-->
+               <label id="label-search">Facility</label>
+               <input id="faciLookup" style="width: 142px; height: 32px; font-size: 12px;display: inline-block;"
+                  soho-lookup soho-busyindicator [activated]="isBusyQrid" [(ngModel)]="modelSelected.Facility"
+                  class="ml-1" [columns]="facilityColumns" [dataset]="facilityitems"
+                  (change)="onChangeLookupFacility($event)" (afteropen)="onAfterOpen($event)" field="FACI"
+                  title="Facility" name="Facility" />
+            </div>
+            <div class="divFlex">
+               <!--Item Number Lookup-->
+               <label id="label-search">Item Number</label>
+               <input id="itemnoLookup" style="width: 142px; height: 32px; font-size: 12px;display: inline-block;"
+                  soho-lookup soho-busyindicator [activated]="isBusyQrid" [(ngModel)]="modelSelected.Itemno"
+                  class="ml-1" [columns]="itemnoColumns" [dataset]="itemnoitems" (change)="onChangeLookupItem($event)"
+                  (afteropen)="onAfterOpen($event)" field="ITNO" title="ItemNo" name="Item" />
+            </div>
+            <div class="divFlex">
+               <!--Lot Number Lookup-->
+               <label id="label-search">Lot Number</label>
+               <input id="lotnoLookup" style="width: 142px; height: 32px; font-size: 12px;display: inline-block;"
+                  soho-lookup soho-busyindicator [activated]="isBusyQrid" [(ngModel)]="modelSelected.Lotno" class="ml-1"
+                  [columns]="lotnoColumns" [dataset]="lotnoitems" (change)="onChangeLookupLot($event)"
+                  (afteropen)="onAfterOpen($event)" field="BANO" title="LotNo" name="Lot"
+                  [disabled]="!isITNOselected" />
+            </div>
+            <div class="divFlex">
+               <!--Request ID Lookup-->
+               <label id="label-search">Request ID</label>
+               <input id="search-qrid" class="ml-1" style="width: 142px;" [(ngModel)]="textfieldQRID" />
+            </div>
+            <!--Search Button-->
+            <button soho-button="primary" type="primary" class="btn-primary"
+               style="margin-top: 8px; float:right; margin-right:10px" (click)="searchRecords()">Search</button>
+         </div>
+         <div class="eight columns">
+            <!--QI Request Grid-->
+            <div id="qridGrid" #qridGrid soho-datagrid [gridOptions]="qridOptions" soho-busyindicator
+               [activated]="isBusyQrid" [blockUI]="true" [displayDelay]="0"
+               [toolbar]="{title: 'QI Requests', results: true, personalize: true}" (selected)="onSelected($event)">
+            </div>
+            <div style="margin-top: 0px;">
+               <div class="divFlex" style="margin-top: 0px;">
+                  <label id="MOLabel">Text</label>
+                  <input id="MOtext" placeholder="" [disabled]="true" [(ngModel)]="moText1" />
+               </div>
+               <div class="divFlex" style="margin-top: 0px;">
+                  <label id="MOLabel"></label>
+                  <input id="MOtext" placeholder="" [disabled]="true" [(ngModel)]="moText2" />
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!--div class="two-third column" style=" margin-left: 10px; margin-right: 20px; width: calc(50% - 20px);"-->
+      <div class="card auto-height" class="two columns">
+         <div class="divFlex" style="margin-top: 45px;">
+            <label for="di-stdt"
+               style="margin-right: 0.28rem; margin-top: 8px;margin-bottom: 0px; width: 15%; vertical-align: middle; height: 30px;">Pallet</label><br>
+            <input id="di-desc" placeholder="" style="width: 50px;margin-right: 1.5rem;" [disabled]="!palletwiseFlag"
+               [(ngModel)]="textfieldfPallet" (keyup.enter)="onblurPallet()" />
+            <label> - </label><br>
+            <input id="di-desc" placeholder="" style="width: 50px; margin-left: 1.5rem; margin-bottom: 15px;"
+               [disabled]="!palletwiseFlag" [(ngModel)]="textfieldtPallet" (keyup.enter)="onblurPallet()" />
+         </div>
+         <div class="divFlex" style="margin-top: 0px;">
+            <label for="di-stdt"
+               style="margin-right: 0.28rem; margin-bottom: 15px; width: 15%; vertical-align: middle; height: 30px;">Status</label><br>
+            <form [formGroup]="form" class="form dd" style="margin-top: 0px; width: 142px;">
+               <select id="status" soho-dropdown attributes="font-size: 8px" [formControlName]="'statControl'"
+                  soho-busyindicator [(ngModel)]="selectedItem" [blockUI]="true" [displayDelay]="0"
+                  (listclosed)="selectStatusDropdown()" [disabled]="!requestSelected">
+                  <option *ngFor="let child of childrenPreload | async" [value]="child.value">
+                     {{child!.label}}
+                  </option>
+               </select>
+            </form>
+         </div>
+         <!--div class="divFlex">
+            <button soho-button="primary" style="margin-bottom: 15px;" type="primary" class="btn-primary"
+               (click)="test()" id="btn-neutral-updmat">Pallet-wise Testing</button>
+         </div-->
+         <div class="divFlex">
+            <button soho-button="primary" style="margin-bottom: 15px; width: 195px;" type="primary" class="btn-primary"
+               id="btn-positive" (click)="retrieveProposal()" [disabled]="!approvedFlag">Retrieve Grade Item</button>
+         </div>
+         <div class="divFlex">
+            <button soho-button="primary" style="margin-bottom: 15px; width: 195px;" type="primary" class="btn-primary"
+               id="btn-positive" (click)="reportProposal()" [disabled]="!approvedFlag">Report Grade Item</button>
+         </div>
+         <div class="divFlex">
+            <button soho-button="primary" style="margin-bottom: 15px; width: 195px;" type="primary" class="btn-primary"
+               id="btn-positive" (click)="openModal()" [disabled]="!approvedFlag">Reclassification</button>
+         </div>
+         <div class="divFlex">
+            <button soho-button="primary" style="margin-bottom: 15px; width: 195px;" type="primary" class="btn-primary"
+               id="btn-positive" (click)="palletWise()" [disabled]="!testSelected">Pallet Wise Testing</button>
+         </div>
+      </div>
+   </div>
+   <div class="row card full-width" style="min-height: 290px">
+      <!--QMS QI Test Result-->
+      <div class="qiresultgrid">
+         <div id="qiresGrid" style="height: 290px;" #qiresGrid soho-datagrid [gridOptions]="qiresOptions"
+            soho-busyindicator (selected)="onSelectData($event)" (keydown)="onkeyDown($event)"
+            [showSelectAllCheckBox]="true" (exiteditmode)="onblur($event)" (beforeentereditmode)="onEnterEdit($event)"
+            selected [activated]="isBusyQiRes" [blockUI]="true" [displayDelay]="0">
+         </div>
+      </div>
+      <!--/div-->
+   </div>
+</div>
+
+<script>
+   $('body').on('initialized', function () {
+      $('#date-field-normal')
+         .datepicker({
+            attributes: [
+               { name: 'id', value: 'custom-id' },
+               { name: 'data-automation-id', value: 'custom-automation-id' }
+            ]
+         })
+         .on('change', function () {
+            console.log('Change Event Fired')
+         });
+   });
+
+   $('#date-field-legend').datepicker({
+      showLegend: true,
+      dateFormat: 'yyyy-MM-dd',
+      legend: [
+         { name: 'Sat', color: 'emerald06', dayOfWeek: [6] }
+      ]
+   });
+
+</script>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+   <meta charset="utf-8">
+   <title>QMS</title>
+   <base href="/">
+
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <link rel="icon" type="image/x-icon" href="favicon.ico">
+   <!--<link rel="stylesheet" id="stylesheet" href="../node_modules/ids-enterprise/dist/css/theme-classic-light.css"
+      type="text/css">-->
+</head>
+
+<bodyclass="no-scroll">
+   <app-root></app-root>
+   <script>
+      $('body').on('initialized', function () {
+         $('#date-field-normal')
+            .datepicker({
+               attributes: [
+                  { name: 'id', value: 'custom-id' },
+                  { name: 'data-automation-id', value: 'custom-automation-id' }
+               ]
+            })
+            .on('change', function () {
+               console.log('Change Event Fired')
+            });
+      });
+
+      $('#date-field-legend').datepicker({
+         showLegend: true,
+         dateFormat: 'yyyy-MM-dd',
+         legend: [
+            { name: 'Sat', color: 'emerald06', dayOfWeek: [6] }
+         ]
+      });
+
+   </script>
+   </body>
+
+</html>

@@ -1,0 +1,269 @@
+/* You can add global styles to this file, and also import other style files */
+@import "../node_modules/ids-enterprise/dist/css/theme-classic-light.css";
+
+.manage-in {
+   height: 30px;
+   width: 100%;
+   font-size: 12px;
+   display: inline-block;
+}
+
+.manage-agno {
+   height: 30px;
+   width: 35%;
+   font-size: 12px;
+   display: inline-block;
+}
+
+.update-field-P {
+   background-color: #81A7E7;
+   width: 80px;
+}
+
+.update-field-A {
+   background-color: #E0786C;
+   width: 80px;
+}
+
+.review-field-P {
+   background-color: #81A7E7;
+   width: 114px;
+   margin-top: 10px;
+   margin-left: 10px;
+}
+
+.review-field-A {
+   background-color: #E0786C;
+   width: 114px;
+   margin-top: 10px;
+   margin-left: 10px;
+}
+
+.label {
+   display: inline-block;
+}
+
+.label-100 {
+   width: 100%;
+   padding-top: 15px;
+}
+
+.label-30 {
+   width: 100%;
+   margin: 8px 0 0 56px;
+}
+
+
+.btn {
+   height: 30px;
+}
+
+.card {
+   padding: 10px 10px 10px 10px;
+}
+
+.row {
+   padding-right: 0px;
+}
+
+.form {
+   height: 20px;
+   font-size: 8px;
+   display: inline-block;
+   width: 150px;
+}
+
+.label {
+   width: 30%;
+   padding-left: 2px;
+}
+
+.fileupload {
+   padding-top: 4px;
+   border: none;
+}
+
+.row-button {
+   float: right;
+   margin-right: 0px;
+}
+
+.row-button1 {
+   float: right;
+   margin-right: 0px;
+}
+
+
+#create {
+   float: right;
+   width: 20%;
+   margin-top: 15px;
+   /* background-color: #88DD88; */
+}
+
+#btn-positive {
+   /* background-color: #88DD88; */
+   margin-bottom: 0px;
+}
+
+#btn-negative {
+   /* background-color: lightcoral; */
+   margin-bottom: 0px;
+}
+
+#btn-neutral {
+   /* background-color: #68B49B; */
+   margin-bottom: 0px;
+}
+
+#btn-neutral-updmat {
+   /* background-color: #68B49B; */
+   margin-bottom: 0px;
+}
+
+#date-field-normal {
+   margin-left: 15px;
+   width: 33%;
+   margin-top: 15px;
+}
+
+#la-first {
+   margin-top: 8px;
+   margin-bottom: 0px;
+   width: 10%;
+   vertical-align: middle;
+   height: 30px;
+}
+
+#la-second {
+   margin-left: 50px;
+   display: flex;
+   vertical-align: middle;
+   height: 30px;
+   width: 12%;
+   margin-bottom: 12px;
+   margin-top: 8px;
+}
+
+#la-third {
+   margin-left: 50px;
+   margin-top: 8px;
+   margin-bottom: 0px;
+   width: 10%;
+   display: flex;
+   vertical-align: middle;
+   height: 30px;
+
+}
+
+
+.lookup-wrapper .lookup {
+   width: 50%;
+   margin-bottom: 0px;
+}
+
+.dd {
+   margin-top: 45px;
+}
+
+.divFlex {
+   display: flex;
+   flex-direction: row;
+   vertical-align: middle;
+}
+
+.full-width {
+   padding: 0px;
+}
+
+.full-height.full-width {
+   padding: 0px;
+   width: 100%;
+}
+
+.two-thirds.column {
+   margin-left: 20px;
+   margin-right: 20px;
+   width: calc(66.6666666666% - 40px);
+}
+
+svg {
+   font: 10px helvetica;
+   shape-rendering: crispEdges;
+}
+
+.widget {
+   margin-top: 20px;
+}
+
+.axis path,
+.axis line {
+   fill: none;
+   stroke: #c1c1c1;
+}
+
+.datagrid-container.has-empty-message.is-empty .datagrid-wrapper {
+   min-height: 200px;
+}
+
+.datagrid-container .empty-message-container {
+   height: 100%;
+   margin-left: 20px;
+   margin-right: 20px;
+}
+
+.mb-0 {
+   margin-bottom: 5px !important;
+}
+
+.ml-1 {
+   margin-left: 0.28rem;
+}
+
+.axisText {
+   font-size: 12px;
+}
+
+#label-search {
+   margin-top: 8px;
+   margin-bottom: 0px;
+   width: 35%;
+   vertical-align: middle;
+   height: 30px;
+}
+
+#label-pallet {
+   margin-top: 8px;
+   margin-bottom: 0px;
+   width: 20%;
+   vertical-align: middle;
+   height: 30px;
+}
+
+.qiresultgrid {
+   padding: 20px 20px 0 20px;
+   overflow-y: false;
+   height: 290px;
+}
+
+.card,
+.small-widget,
+.widget {
+   background-color: #fff;
+   border: 1px solid #bdbdbd;
+   border-radius: 2px;
+   min-height: 275px;
+   position: relative;
+}
+
+#MOtext {
+   height: 20px;
+   font-size: 12px;
+   width: 85%;
+}
+
+#MOLabel {
+   width: 15%;
+   vertical-align: middle;
+   height: 20px;
+}
