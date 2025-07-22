@@ -1,6 +1,6 @@
 <div page-container full-width full-height style="overflow-y: hidden; height: 100%;">
    <div class="row card full-width" style="margin-bottom: 0px; max-height: 360px;">
-      <div id=" lefttab" class="nine columns">
+      <div id=" lefttab" class="ten columns">
          <!--QMS QI Request-->
          <div class="card auto-height" class="three columns">
             <div class="divFlex" style="margin-top: 45px;">
@@ -35,10 +35,12 @@
                <input id="search-qrid" class="ml-1" style="width: 142px;" [(ngModel)]="textfieldQRID" />
             </div>
             <!--Search Button-->
-            <button soho-button="primary" type="primary" class="btn-primary"
-               style="margin-top: 8px; float:right; margin-right:10px" (click)="searchRecords()">Search</button>
+            <div style="text-align: center; margin-top: 8px;">
+               <button soho-button="primary" type="primary" class="btn-primary"
+                  (click)="searchRecords()">Search</button>
+            </div>
          </div>
-         <div class="eight columns">
+         <div class="nine columns">
             <!--QI Request Grid-->
             <div id="qridGrid" #qridGrid soho-datagrid [gridOptions]="qridOptions" soho-busyindicator
                [activated]="isBusyQrid" [blockUI]="true" [displayDelay]="0"
@@ -99,17 +101,17 @@
          </div>
          <div class="divFlex">
             <button soho-button="primary" style="margin-bottom: 15px; width: 195px;" type="primary" class="btn-primary"
-               id="btn-positive" (click)="palletWise()" [disabled]="!testSelected">Pallet Wise Testing</button>
+               id="btn-positive" (click)="palletWisev2()" [disabled]="!testSelected">Pallet Wise Testing</button>
          </div>
       </div>
    </div>
    <div class="row card full-width" style="min-height: 290px">
       <!--QMS QI Test Result-->
       <div class="qiresultgrid">
-         <div id="qiresGrid" style="height: 290px;" #qiresGrid soho-datagrid [gridOptions]="qiresOptions"
+         <div id="qiresGrid" style="height: 280px;" #qiresGrid soho-datagrid [gridOptions]="qiresOptions"
             soho-busyindicator (selected)="onSelectData($event)" (keydown)="onkeyDown($event)"
-            [showSelectAllCheckBox]="true" (exiteditmode)="onblur($event)" (beforeentereditmode)="onEnterEdit($event)"
-            selected [activated]="isBusyQiRes" [blockUI]="true" [displayDelay]="0">
+            (exiteditmode)="onblur($event)" (beforeentereditmode)="onEnterEdit($event)" selected
+            [activated]="isBusyQiRes" [blockUI]="true" [displayDelay]="0">
          </div>
       </div>
       <!--/div-->

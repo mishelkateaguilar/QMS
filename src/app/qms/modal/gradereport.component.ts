@@ -13,6 +13,7 @@ export class GradeReportDialogComponent {
    proposedMsg: string;
    gradeOptions: SohoDataGridOptions;
    allProposals: any[] = [];
+   rowSelected: any;
 
    @ViewChild('gradeGrid') gradeGrid: SohoDataGridComponent;
    @ViewChild('dialogPlaceholder', { read: ViewContainerRef, static: true })
@@ -68,10 +69,11 @@ export class GradeReportDialogComponent {
          pagesize: 10,
          rowHeight: 'extra-small',
          columns: [
-            { id: 'selectionCheckbox', sortable: false, resizable: false, width: '1', formatter: Soho.Formatters.SelectionCheckbox, align: 'center' },
+            { field: 'selectionCheckbox', id: 'selectionCheckbox', sortable: false, resizable: false, width: '1', formatter: Soho.Formatters.SelectionCheckbox, align: 'center' },
             { field: 'PALL', id: 'PALL', name: 'Pallet', filterType: 'text', sortable: true, resizable: true, width: '2' },
             { field: 'PROP', id: 'PROP', name: 'Proposed Item Grade', filterType: 'text', sortable: true, resizable: true, width: '3' },
             { field: 'ITNO', id: 'ITNO', name: 'New Item Number', filterType: 'text', sortable: true, resizable: true, width: '5' },
+            { field: 'CAMU', id: 'CAMU', name: 'Container', filterType: 'text', sortable: true, resizable: true, width: '2' }
          ],
          dataset: this.allProposals,
          emptyMessage: {
@@ -79,6 +81,27 @@ export class GradeReportDialogComponent {
             icon: 'icon-empty-no-data'
          }
       };
+   }
+
+   async onSelectData(event: { rows: { data: any; }[]; row; index; type }) {
+      this.rowSelected = event.rows.length > 0 ? true : false;
+      console.log("row " + event.index + " type: " + event.type);
+      var proposed = "";
+      if (this.rowSelected && event.type == "select") {
+         proposed = event.rows[event.rows.length - 1].data['PROP'];
+         console.log("sel: " + proposed + "_" + event.row);
+         /**if (proposed == "No Change") {
+            const select = this.gradeOptions.columns.find(column => column.id === 'selectionCheckbox');
+            select.formatter = "";
+         }
+         else {
+            const select = this.gradeOptions.columns.find(column => column.id === 'selectionCheckbox');
+            select.formatter = Soho.Formatters.SelectionCheckbox;
+         }**/
+         if (this.gradeGrid.selectedRows().length > 0) {
+            this.qmsService.selectedPallets = this.gradeGrid.selectedRows();
+         }
+      }
    }
 
 }

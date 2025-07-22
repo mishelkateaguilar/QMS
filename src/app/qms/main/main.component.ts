@@ -127,6 +127,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
    proposeDowngrade: any[] = [];
    noProposal: any[] = [];
    allProposals: any[] = [];
+   allProposalsDisplay: any[] = [];
 
    //Mo Text fields
    moText1: string = "";
@@ -418,6 +419,9 @@ export class MainPanelComponent extends CoreBase implements OnInit {
       this.setBusy(false, 'cuno');
    }
 
+   //ADARIO added global list of required decimals
+   qiresdecimals: any = [];
+   // calling Custom List CMS100MI.Lst_EX_QMSRQT
    /************************************************** PANEL B (BOTTOM) QI Test Results ***************************************************/
    //Displays the items in datagrid
    async setQIResult(faci, qrid, itno, bano) {
@@ -425,8 +429,10 @@ export class MainPanelComponent extends CoreBase implements OnInit {
       this.qiresGrid ? this.qiresGrid.dataset = [] : this.qiresOptions.dataset = [];
       //If Pallet-Wise Testing selected, load from XtendM3 table
       this.qires = await this.qmsService.ListXtendTestResults(this.company, faci, qrid, itno, bano);
+      //ADARIO get decimal points per test
+      this.qiresdecimals = await this.qmsService.LstQMSDecimals(faci, qrid);
       if (this.qires.length == 0) {
-         this.palletwiseFlag == false;
+         this.palletwiseFlag = false;
          //Load from standard
          await this.setOptionsStandard();
          this.qires = await this.qmsService.ListQIResult(faci, qrid, itno, bano);
@@ -440,6 +446,46 @@ export class MainPanelComponent extends CoreBase implements OnInit {
          this.textfieldfPallet = "1";
          this.textfieldtPallet = this.palletCount;
       }
+
+      //ADARIO Added to format the display depending on the decimal
+      for (const line of this.qires) {
+         console.log(this.palletwiseFlag)
+         let selecteditemdecimal: any
+         if (this.palletwiseFlag) {
+            selecteditemdecimal = this.qiresdecimals.find(item => item.RTQTST === line.QTST);
+         } else {
+            selecteditemdecimal = this.qiresdecimals.find(item => item.RTQTST === line.QTST);
+         }
+         if (selecteditemdecimal) {
+            let decimalplaces = Number(selecteditemdecimal.RTDCCD);
+            // Format EVMX
+            if (line.EVMX !== undefined && line.EVMX !== null && !isNaN(Number(line.EVMX))) {
+               line.EVMX = String(Number(line.EVMX).toFixed(decimalplaces));
+            }
+            // Format EVTG
+            if (line.EVTG !== undefined && line.EVTG !== null && !isNaN(Number(line.EVTG))) {
+               line.EVTG = String(Number(line.EVTG).toFixed(decimalplaces));
+            }
+            // Format EVMN
+            if (line.EVMN !== undefined && line.EVMN !== null && !isNaN(Number(line.EVMN))) {
+               line.EVMN = String(Number(line.EVMN).toFixed(decimalplaces));
+            }
+            // Format QTRS
+            if (line.QTRS !== undefined && line.QTRS !== null && !isNaN(Number(line.QTRS))) {
+               line.QTRS = String(Number(line.QTRS).toFixed(decimalplaces));
+            }
+            // Format QTRS1
+            if (line.QTRS1 !== undefined && line.QTRS1 !== null && !isNaN(Number(line.QTRS1)) && this.palletwiseFlag) {
+               line.QTRS1 = String(Number(line.QTRS1).toFixed(decimalplaces));
+            }
+         }
+      }
+      console.log("this.qires")
+      console.log(this.qires);
+
+      console.log('this.qiresdecimals');
+      console.log(this.qiresdecimals);
+
       this.qiresGrid ? this.qiresGrid.dataset = this.qires : this.qiresOptions.dataset = this.qires;
    }
 
@@ -468,9 +514,46 @@ export class MainPanelComponent extends CoreBase implements OnInit {
 
    /***************************************************** ON ENTER - QI TEST RESULT GRID ***************************************************/
    async onblur(event: SohoDataGridEditModeEvent): Promise<void> {
+      console.log("onblur event");
       console.log(event);
       this.rowQIRes = event.row;
-      if (this.isEnter) {
+      console.log("this.qires")
+      console.log(this.qires);
+
+
+      console.log('this.qiresdecimals');
+      console.log(this.qiresdecimals)
+      const selecteditemdecimal = this.qiresdecimals.find(item => item.RTQTST === event.item['QTST']);
+      console.log('selecteditemdecimal');
+      console.log(selecteditemdecimal);
+      let allowinputdecimal: boolean = false;
+      let inputValue = event.item['QTRS1'];
+      if (inputValue == undefined) {
+         inputValue = event.item['QTRS'];
+      }
+      console.log("inputValue: " + inputValue);
+      const expectedDecimalPlaces = parseInt(selecteditemdecimal.RTDCCD, 10);
+      console.log("expectedDecimalPlaces: " + expectedDecimalPlaces);
+      // Function to get the exact number of decimal places
+      function getDecimalPlaces(value: any): number {
+         const numStr = value?.toString().trim();
+         if (!numStr || isNaN(Number(numStr))) return -1;
+         const parts = numStr.split('.');
+         return parts.length === 2 ? parts[1].length : 0;
+      }
+      const actualDecimalPlaces = getDecimalPlaces(inputValue);
+      // Set to true only if decimal places match exactly
+      // allowinputdecimal = actualDecimalPlaces === expectedDecimalPlaces;
+      if (this.isEnter && actualDecimalPlaces == expectedDecimalPlaces && selecteditemdecimal.RTTSTY == "0") {
+         allowinputdecimal = true;
+      }
+      console.log("allowinputdecimal: " + allowinputdecimal);
+      if (this.isEnter && !allowinputdecimal && selecteditemdecimal.RTTSTY == "0") {
+         //this.handleError("Please enter a value with exactly " + expectedDecimalPlaces + " decimal places for test " + event.item['QTST'] + " Quantity Result " + event.item['QTRS1'] + " .");
+         //MAGUILAR 20250710 - Changed from obj['QTRS1'] to inputValue
+         this.handleError("Please enter a value with exactly " + expectedDecimalPlaces + " decimal places for test " + event.item['QTST'] + " Quantity Result " + inputValue + " .");
+      }
+      if (this.isEnter && (allowinputdecimal || event.item['TSTY'] != '0')) {
          this.setBusy(true, 'qires');
          var newQTRS = "";
          var newQLCD = "";
@@ -688,6 +771,12 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                            //Scenario 3 Copy test > Pallet Wise Testing
                            //Get number of lots to create number of pallet copies
                            var PalletCount = await this.qmsService.GetPallet(this.faci, this.bano, this.itemno);
+
+                           //to be tested ADARIO
+                           var palletget = await this.qmsService.GetPalletv2(this.faci, this.bano, this.itemno);
+                           var PalletCount = palletget[0];
+                           var camulist = palletget[1];
+
                            //If number of pallets is less than 3, cannot trigger pallet wise testing
                            if (PalletCount < 3) {
                               this.handleError("Pallet count less than or equal 2, cannot trigger pallet wise testing");
@@ -716,7 +805,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                               }
 
                               //Add 3rd sequence for test that failed
-                              var isOK = await this.qmsService.AddXtendTestResult(this.company, this.faci, this.qrid, event.item['QTST'], event.item['TSTY'], 3, event.item['QOP12'], this.itemno, this.bano, prvl, "", "", "", "", "", event.item['EXSQ'], event.item['EVMX'], event.item['EVMN'], event.item['EVTG'], event.item['SPEC'], event.item['QSE1'], event.item['QSE2'], event.item['QTE1'], event.item['QTE2'], event.item['VLTP'], event.item['TCAL'], event.item['FMID'], event.item['QTCD'], event.item['QLCD2'], "1");
+                              var isOK = await this.qmsService.AddXtendTestResult(this.company, this.faci, this.qrid, event.item['QTST'], event.item['TSTY'], 3, event.item['QOP12'], this.itemno, this.bano, prvl, "", "", "", "", "", event.item['EXSQ'], event.item['EVMX'], event.item['EVMN'], event.item['EVTG'], event.item['SPEC'], event.item['QSE1'], event.item['QSE2'], event.item['QTE1'], event.item['QTE2'], event.item['VLTP'], event.item['TCAL'], event.item['FMID'], event.item['QTCD'], event.item['QLCD2'], "1", camulist[2]);
                               if (!isOK) {
                                  this.handleError("3rd sequence test has not been added to the XtendM3 table. Check console for errors.");
                               }
@@ -724,20 +813,53 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                               var ind = 4;
                               var tstCount = 0;
                               var passCount = 0;
-                              for (i = 0; i < (parseInt(PalletCount) - 3); i++) {
+
+                              //REmoved to use promise all  to call api in parallel ADARIO
+                              // for (i = 0; i < (parseInt(PalletCount) - 3); i++) {
+                              //    tstCount++;
+
+                              //    // var isOK = await this.qmsService.AddXtendTestResult(this.company, this.faci, this.qrid, event.item['QTST'], event.item['TSTY'], ind, event.item['QOP12'], this.itemno, this.bano, "", "", "", "", "", "", event.item['EXSQ'], event.item['EVMX'], event.item['EVMN'], event.item['EVTG'], event.item['SPEC'], event.item['QSE1'], event.item['QSE2'], event.item['QTE1'], event.item['QTE2'], event.item['VLTP'], event.item['TCAL'], event.item['FMID'], event.item['QTCD'], event.item['QLCD2'], "1");
+                              //    // ADARIO TO BE TESTED
+
+                              //    for(let camu of camulist){
+                              //       var isOK = await this.qmsService.AddXtendTestResult(this.company, this.faci, this.qrid, event.item['QTST'], event.item['TSTY'], ind, event.item['QOP12'], this.itemno, this.bano, "", "", "", "", "", "", event.item['EXSQ'], event.item['EVMX'], event.item['EVMN'], event.item['EVTG'], event.item['SPEC'], event.item['QSE1'], event.item['QSE2'], event.item['QTE1'], event.item['QTE2'], event.item['VLTP'], event.item['TCAL'], event.item['FMID'], event.item['QTCD'], event.item['QLCD2'], "1",camu);
+                              //    }
+
+                              //    if (isOK) {
+                              //       passCount++;
+                              //    }
+                              //    ind++;
+                              // }
+
+
+                              const addTestPromises: Promise<any>[] = [];
+
+                              // for (let i = 0; i < (parseInt(PalletCount) - 3); i++) {
+
+                              for (let camu of camulist.slice(3)) {
                                  tstCount++;
-                                 var isOK = await this.qmsService.AddXtendTestResult(this.company, this.faci, this.qrid, event.item['QTST'], event.item['TSTY'], ind, event.item['QOP12'], this.itemno, this.bano, "", "", "", "", "", "", event.item['EXSQ'], event.item['EVMX'], event.item['EVMN'], event.item['EVTG'], event.item['SPEC'], event.item['QSE1'], event.item['QSE2'], event.item['QTE1'], event.item['QTE2'], event.item['VLTP'], event.item['TCAL'], event.item['FMID'], event.item['QTCD'], event.item['QLCD2'], "1");
-                                 if (isOK) {
-                                    passCount++;
-                                 }
+                                 addTestPromises.push(
+                                    this.qmsService.AddXtendTestResult(
+                                       this.company, this.faci, this.qrid, event.item['QTST'], event.item['TSTY'], ind, event.item['QOP12'],
+                                       this.itemno, this.bano, "", "", "", "", "", "",
+                                       event.item['EXSQ'], event.item['EVMX'], event.item['EVMN'], event.item['EVTG'],
+                                       event.item['SPEC'], event.item['QSE1'], event.item['QSE2'], event.item['QTE1'],
+                                       event.item['QTE2'], event.item['VLTP'], event.item['TCAL'], event.item['FMID'],
+                                       event.item['QTCD'], event.item['QLCD2'], "1", camu
+                                    )
+                                 );
                                  ind++;
                               }
+
+                              const results = await Promise.all(addTestPromises);
+                              passCount += results.filter(isOK => isOK).length;
+
                               if (passCount != tstCount) {
                                  this.handleError("One or more tests have not been added to the XtendM3 table.");
                               }
 
-                              var isUpdate = await this.qmsService.UpdXtendTestResult(this.company, this.faci, this.qrid, this.itemno, event.item['QTST'], event.item['TSTY'], "1", "", "", "", "", "", "", "1", "");
-                              var isUpdate = await this.qmsService.UpdXtendTestResult(this.company, this.faci, this.qrid, this.itemno, event.item['QTST'], event.item['TSTY'], event.item['TSEQ'], newQTRS, newQLCD, event.item['QOP12'], tstt, ttdt, this.usid, "1", event.item['SI01']);
+                              var isUpdate = await this.qmsService.UpdXtendTestResult(this.company, this.faci, this.qrid, this.itemno, event.item['QTST'], event.item['TSTY'], "1", "", "", "", "", "", "", "1", "", camulist[0]);
+                              var isUpdate = await this.qmsService.UpdXtendTestResult(this.company, this.faci, this.qrid, this.itemno, event.item['QTST'], event.item['TSTY'], event.item['TSEQ'], newQTRS, newQLCD, event.item['QOP12'], tstt, ttdt, this.usid, "1", event.item['SI01'], camulist[1]);
 
                               this.palletwiseFlag = true;
                               await this.setOptionsPallet();
@@ -1708,6 +1830,8 @@ export class MainPanelComponent extends CoreBase implements OnInit {
 
             this.isEnter = false;
          }
+         //20250710 Not available in MAGUILAR version
+         await this.setQIResult(this.faci, this.qrid, this.itemno, this.bano);
          this.setBusy(false, 'qires');
       }
    }
@@ -2064,6 +2188,146 @@ export class MainPanelComponent extends CoreBase implements OnInit {
    }
 
    /********************************************** MANUAL TRIGGER FOR PALLET WISE TESTING *************************************************/
+   //to be tested ADARIO replace call on html code
+   async palletWisev2() {
+      this.setBusy(true, 'qires');
+      //Check if test selected
+      var copies = 0;
+      if (!this.rowSelected) {
+         this.handleError("Please select a test first.");
+         this.setBusy(false, 'qires');
+      } else {
+         //Check if pallet wise testing not yet triggered; get pallet count
+         var palletget = await this.qmsService.GetPalletv2(this.faci, this.bano, this.itemno);
+         var palletCount = palletget[0];
+         var camulist = palletget[1];
+         console.log(palletCount);
+         console.log(camulist);
+         //Check number of records in test results grid
+         var count: number = 0;
+         console.log(this.qires)
+         for (let obj of this.qires) {
+            if (obj['QTST'] == this.rowData['QTST']) {
+               count++;
+            }
+         }
+         if (palletCount == 0) {
+            console.log("Number of lot is 0, or API to retrieve lots failed...");
+         }
+         else if (count >= palletCount) {
+            this.handleError("Pallet-wise testing already triggered for selected test: " + this.rowData['QTST'] + ".");
+         } else {
+            //If Pallet-Wise Testing not yet selected for other tests, add all existing tests
+            var XtendM3tests = await this.qmsService.ListXtendTestResults(this.company, this.faci, this.qrid, this.itemno, this.bano);
+            if (XtendM3tests.length == 0) {
+               //Add already existing tests to XtendM3
+               const addTestPromises: Promise<any>[] = [];
+               for (let obj of this.qires) {
+                  var isOK;
+                  if (obj['QTST'] == this.rowData['QTST']) {
+                     for (let camu of camulist) {
+                        // isOK = await this.qmsService.AddXtendTestResult(this.company, this.faci, this.qrid, obj['QTST'], obj['TSTY'], obj['TSEQ'], obj['QOP12'], this.itemno, this.bano, "", obj['SI01'], obj['TTDT'], obj['QTRS'], obj['QLCD'], obj['TSTT'], obj['EXSQ'], obj['EVMX'], obj['EVMN'], obj['EVTG'], obj['SPEC'], obj['QSE1'], obj['QSE2'], obj['QTE1'], obj['QTE2'], obj['VLTP'], obj['TCAL'], obj['FMID'], obj['QTCD'], obj['QLCD2'], "1",camu);
+                        addTestPromises.push(
+                           this.qmsService.AddXtendTestResult(
+                              this.company, this.faci, this.qrid, obj['QTST'], obj['TSTY'], obj['TSEQ'], obj['QOP12'],
+                              this.itemno, this.bano, "", obj['SI01'], obj['TTDT'], obj['QTRS'], obj['QLCD'], obj['TSTT'],
+                              obj['EXSQ'], obj['EVMX'], obj['EVMN'], obj['EVTG'], obj['SPEC'], obj['QSE1'], obj['QSE2'],
+                              obj['QTE1'], obj['QTE2'], obj['VLTP'], obj['TCAL'], obj['FMID'], obj['QTCD'], obj['QLCD2'],
+                              "1", camu
+                           )
+                        );
+
+                     }
+                  }
+                  else {
+                     // for(let camu of camulist){
+                     // isOK = await this.qmsService.AddXtendTestResult(this.company, this.faci, this.qrid, obj['QTST'], obj['TSTY'], obj['TSEQ'], obj['QOP12'], this.itemno, this.bano, "", obj['SI01'], obj['TTDT'], obj['QTRS'], obj['QLCD'], obj['TSTT'], obj['EXSQ'], obj['EVMX'], obj['EVMN'], obj['EVTG'], obj['SPEC'], obj['QSE1'], obj['QSE2'], obj['QTE1'], obj['QTE2'], obj['VLTP'], obj['TCAL'], obj['FMID'], obj['QTCD'], obj['QLCD2'], "0", camu);
+                     addTestPromises.push(
+                        this.qmsService.AddXtendTestResult(
+                           this.company, this.faci, this.qrid, obj['QTST'], obj['TSTY'], obj['TSEQ'], obj['QOP12'],
+                           this.itemno, this.bano, "", obj['SI01'], obj['TTDT'], obj['QTRS'], obj['QLCD'], obj['TSTT'],
+                           obj['EXSQ'], obj['EVMX'], obj['EVMN'], obj['EVTG'], obj['SPEC'], obj['QSE1'], obj['QSE2'],
+                           obj['QTE1'], obj['QTE2'], obj['VLTP'], obj['TCAL'], obj['FMID'], obj['QTCD'], obj['QLCD2'],
+                           "0")
+                     );
+                     // }
+                  }
+                  const results = await Promise.all(addTestPromises);
+                  if (results.includes(false) && obj['QTST'] == this.rowData['QTST']) {
+                     this.handleError("Existing test " + obj['QTST'] + " sequence " + obj['TSEQ'] + " has not been added to the XtendM3 table. Check console for errors.");
+                  }
+               }
+
+
+            }
+            //Already existing in XtendM3, update PALL
+            else {
+               var count = 0;
+               for (let obj of XtendM3tests) {
+                  if (obj['QTST'] == this.rowData['QTST']) {
+                     // for(let camu of camulist){
+                     count++;
+                     console.log("Updating XtendM3 test " + obj['QTST'] + " sequence " + obj['TSEQ'] + " with PALL = 1");
+                     var isUpdate = await this.qmsService.UpdXtendTestResult(this.company, this.faci, this.qrid, this.itemno, this.rowData['QTST'], this.rowData['TSTY'], count, "", "", "", "", "", "", "1", "");
+                     // }
+                  }
+               }
+            }
+            //Calculate number of copies to be added (number of pallets - number of existing tests)
+            copies = palletCount - count;
+            //Copy test
+            var ind = count + 1;
+            var testCount = 0;
+            var passCount = 0;
+            console.log("palletCount: " + palletCount);
+            console.log("copies" + copies);
+            console.log("ind" + ind);
+            console.log("camulist" + camulist);
+
+            const addTestPromises: Promise<any>[] = [];
+            // for (var i = 0; i < copies; i++) {
+            let firstsequence = true
+            if (copies > 0) {
+               for (let camu of camulist) {
+                  var isOK;
+                  testCount++;
+                  if (firstsequence) {
+                     console.log("updating test", this.rowData)
+                     addTestPromises.push(this.qmsService.UpdXtendTestResult(this.company, this.faci, this.qrid, this.itemno, this.rowData['QTST'], this.rowData['TSTY'], "1", "", "", "", "", "", "", "1", "", camu))
+                     firstsequence = false
+                  } else {
+                     console.log("Adding test ", this.rowData);
+                     addTestPromises.push(
+                        this.qmsService.AddXtendTestResult(
+                           this.company, this.faci, this.qrid, this.rowData['QTST'], this.rowData['TSTY'], ind,
+                           this.rowData['QOP12'], this.itemno, this.bano, "", "", "", "", "", "",
+                           this.rowData['EXSQ'], this.rowData['EVMX'], this.rowData['EVMN'], this.rowData['EVTG'],
+                           this.rowData['SPEC'], this.rowData['QSE1'], this.rowData['QSE2'], this.rowData['QTE1'],
+                           this.rowData['QTE2'], this.rowData['VLTP'], this.rowData['TCAL'], this.rowData['FMID'],
+                           this.rowData['QTCD'], this.rowData['QLCD2'], "1", camu
+                        )
+                     );
+                     ind++;
+                  }
+
+               }
+            }
+
+            // }
+            const results = await Promise.all(addTestPromises);
+            passCount += results.filter(isOK => isOK).length;
+            if (passCount != testCount) {
+               this.handleError("One or more tests have not been added to the XtendM3 table.");
+            }
+            //Reload grid
+            this.palletwiseFlag = true;
+            await this.setQIResult(this.faci, this.qrid, this.itemno, this.bano);
+         }
+      }
+      this.setBusy(false, 'qires');
+   }
+
+
    async palletWise() {
       this.setBusy(true, 'qires');
       //Check if test selected
@@ -2145,6 +2409,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
 
    /******************************************* GRID OPTION CHANGE (STANDARD OR PALLET WISE) **********************************************/
    async setOptionsPallet() {
+      console.log("using setOptionsPallet")
       this.qiresGrid.dataset = [];
       this.qiresOptions = {
          selectable: 'single' as SohoDataGridSelectable,
@@ -2174,6 +2439,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
             { field: 'EXSQ', id: 'EXSQ', name: 'Ord', sortable: false, resizable: true, width: '1.5' },
             { field: 'TSTT', id: 'TSTT', name: 'Sts', sortable: false, resizable: true, width: '3' },
             { field: 'ITNO', id: 'ITNO', name: 'Item Number', sortable: false, resizable: true, width: '5' },
+            { field: 'CAMU', id: 'CAMU', name: 'Container', sortable: false, resizable: true, width: '3', },
             { field: 'SI01', id: 'SI01', name: 'Comments', sortable: false, resizable: true, width: '6.5', editor: Soho.Editors.Textarea, maxLength: 50 },
             { field: 'SPEC', id: 'SPEC', name: 'Specification', sortable: false, resizable: true, width: '1', hidden: true },
             { field: 'TSTY', id: 'TSTY', name: 'TestType', sortable: false, resizable: true, width: '1', hidden: true },
@@ -2199,6 +2465,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
    }
 
    async setOptionsStandard() {
+      console.log("using setOptionsStandard")
       this.qiresGrid.dataset = [];
       this.qiresOptions = {
          selectable: 'single' as SohoDataGridSelectable,
@@ -2227,6 +2494,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
             { field: 'EXSQ', id: 'EXSQ', name: 'Ord', sortable: false, resizable: true, maxWidth: 1.5 },
             { field: 'TSTT', id: 'TSTT', name: 'Sts', sortable: false, resizable: true, maxWidth: 3 },
             { field: 'ITNO', id: 'ITNO', name: 'Item Number', sortable: false, resizable: true, maxWidth: 5 },
+            { field: 'CAMU', id: 'CAMU', name: 'Container', sortable: false, resizable: true, maxWidth: 3, hidden: true },
             { field: 'SI01', id: 'SI01', name: 'Comments', sortable: false, resizable: true, maxWidth: 6.5, editor: Soho.Editors.Textarea, maxLength: 50 },
             { field: 'SPEC', id: 'SPEC', name: 'Specification', sortable: false, resizable: true, maxWidth: 1, hidden: true },
             { field: 'TSTY', id: 'TSTY', name: 'TestType', sortable: false, resizable: true, maxWidth: 1, hidden: true },
@@ -2282,7 +2550,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                            faciReclass = qireq['FACI'];
                         }
                         //Get quality test id for newly reclassified item then call QMS450 to copy from old test to new test id
-                        var pass = await this.qmsService.reclass(this.company, itemno, lotno, nitemno, qridReclass, faciReclass);
+                        var pass = await this.qmsService.reclass(this.company, itemno, lotno, nitemno, qridReclass, faciReclass, "0", nitemno);
                         if (pass) {
                            this.showSuccess("Reclassification successful.");
                            dialogRef.close();
@@ -2311,6 +2579,13 @@ export class MainPanelComponent extends CoreBase implements OnInit {
       this.setBusy(true, 'qires');
       this.setBusy(true, 'qrid');
       var pSpecTest, sSpecTest, cSpecTest;
+      this.proposePremium = [];
+      this.proposeStandard = [];
+      this.proposeStandardC = [];
+      this.proposeDowngrade = [];
+      this.noProposal = [];
+      this.allProposals = [];
+      this.allProposalsDisplay = [];
       var pPassed: boolean = true;
       var sPassed: boolean = true;
       var cPassed: boolean = true;
@@ -2375,7 +2650,11 @@ export class MainPanelComponent extends CoreBase implements OnInit {
             var isPassed = true;
             sPassed = true;
             pPassed = true;
+            var camu: any = "";
 
+            //Get container of current pallet
+            //var camu = await this.qmsService.GetContainer(this.faci, this.bano, this.itemno, i - 1);
+            //console.log("Container is " + camu);
 
             //Check if all tests for pallet are passed
             for (let obj of testResults) {
@@ -2386,7 +2665,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                   }
                }
                console.log("no tests is " + noTest);
-               if (noTest == this.palletCount) {
+               if (noTest > 2) {
                   console.log(obj + " is palletwise");
                   for (let obj1 of this.qires) {
                      if (obj1['QTST'] == obj && obj1['TSEQ'] == i) {
@@ -2432,7 +2711,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                      }
                   }
 
-                  if (noTest == this.palletCount) {
+                  if (noTest > 2) {
                      testSeq = i;
                      console.log("Retrieve proposal: Pallet wise");
                      testMap.set(obj, true);
@@ -2450,9 +2729,10 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                         var tseq = obj1['TSEQ'];
                         var qtrs: any = "";
                         var qlcd: any = "";
-                        if (noTest == this.palletCount) {
+                        if (noTest > 2) {
                            qtrs = obj1['QTRS1'];
                            qlcd = obj1['QLCD1'];
+                           camu = obj1['CAMU'];
                         }
                         else {
                            qtrs = obj1['QTRS'];
@@ -2575,21 +2855,25 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                if (sPassed) {
                   this.proposeStandard.push(i);
                   this.allProposals.push({ "PALL": i, "PROP": "Standard", "ITNO": baseItno + "B" });
+                  this.allProposalsDisplay.push({ "PALL": i, "PROP": "Standard", "ITNO": baseItno + "B", "CAMU": camu });
                }
                else {
                   if (baseItno == "LF001-04-001") {
                      if (cPassed) {
                         this.proposeStandardC.push(i);
                         this.allProposals.push({ "PALL": i, "PROP": "Standard", "ITNO": baseItno + "C" });
+                        this.allProposalsDisplay.push({ "PALL": i, "PROP": "Standard", "ITNO": baseItno + "C", "CAMU": camu });
                      }
                      else {
                         this.proposeDowngrade.push(i);
                         this.allProposals.push({ "PALL": i, "PROP": "Downgrade", "ITNO": baseItno + "D" });
+                        this.allProposalsDisplay.push({ "PALL": i, "PROP": "Downgrade", "ITNO": baseItno + "D", "CAMU": camu });
                      }
                   }
                   else {
                      this.proposeDowngrade.push(i);
                      this.allProposals.push({ "PALL": i, "PROP": "Downgrade", "ITNO": baseItno + "D" });
+                     this.allProposalsDisplay.push({ "PALL": i, "PROP": "Downgrade", "ITNO": baseItno + "D", "CAMU": camu });
                   }
                }
             }
@@ -2611,6 +2895,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                else {
                   this.proposeDowngrade.push(i);
                   this.allProposals.push({ "PALL": i, "PROP": "Downgrade", "ITNO": baseItno + "D" });
+                  this.allProposalsDisplay.push({ "PALL": i, "PROP": "Downgrade", "ITNO": baseItno + "D", "CAMU": camu });
                }
             }
             else {
@@ -2618,7 +2903,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                this.allProposals.push({ "PALL": i, "PROP": "No Change", "ITNO": "" });
             }
          }
-         this.qmsService.proposals = this.allProposals;
+         this.qmsService.proposals = this.allProposalsDisplay;
          //Open modal for selection of grade report
          console.log("Premium " + JSON.stringify(this.proposePremium));
          console.log("Standard " + JSON.stringify(this.proposeStandard));
@@ -2975,25 +3260,6 @@ export class MainPanelComponent extends CoreBase implements OnInit {
 
    /****************************************************** PERFORM ITEM CHANGE ************************************************************/
    async reportProposal() {
-      var res = await this.qmsService.GetQSTA(this.faci, this.qrid);
-      const arr = res.split("_");
-      console.log("QAPR: " + arr[1] + " QSTA: " + arr[0]);
-      //Check QAPR; If 1 (Approved) or , call putaway
-      if (arr[1] == "1" || arr[1] == "2") {
-         var isOK = await this.qmsService.itemPutAway(this.company, this.itemno, this.bano, arr[1]);
-         if (isOK) {
-            this.showSuccess("Item putaway is successful.");
-         }
-         else {
-            this.handleError("Item putaway failed.");
-         }
-      }
-      //Check QSTA; If 3, enable buttons
-      if (arr[0] == "3") {
-         this.approvedFlag = true;
-      }
-      else this.approvedFlag = false;
-
       if (this.reportGradeFlag) {
          //Report grade for pallet wise
          if (this.palletwiseFlag) {
@@ -3001,7 +3267,26 @@ export class MainPanelComponent extends CoreBase implements OnInit {
             this.openReportGradeModal();
          }
          else {
-            var pass = await this.qmsService.reportGrade(this.company, this.itemno, this.bano, this.nitemno, this.qrid, this.faci);
+            var res = await this.qmsService.GetQSTA(this.faci, this.qrid);
+            const arr = res.split("_");
+            console.log("QAPR: " + arr[1] + " QSTA: " + arr[0]);
+            //Check QAPR; If 1 (Approved) or , call putaway
+            if (arr[1] == "1" || arr[1] == "2") {
+               var isOK = await this.qmsService.itemPutAway(this.company, this.itemno, this.bano, arr[1]);
+               if (isOK) {
+                  this.showSuccess("Item putaway is successful.");
+               }
+               else {
+                  this.handleError("Item putaway failed.");
+               }
+            }
+            //Check QSTA; If 3, enable buttons
+            if (arr[0] == "3") {
+               this.approvedFlag = true;
+            }
+            else this.approvedFlag = false;
+
+            var pass = await this.qmsService.reportGrade(this.company, this.itemno, this.bano, this.nitemno, this.qrid, this.faci, "0", this.nitemno);
             if (pass) {
                this.showSuccess("Report grade item successful.")
             }
@@ -3036,12 +3321,12 @@ export class MainPanelComponent extends CoreBase implements OnInit {
                      }
 
 
-                     await this.setOptionsStandard();
+                     //await this.setOptionsStandard();
                      this.nitemno = newItem;
                      var index = 0;
                      for (let row of this.qires) {
                         console.log("current row " + JSON.stringify(row) + " qtst:" + row['QTST']);
-                        row['ITNO'] = "TEST";
+                        row['ITNO'] = newItem;
                         this.qiresGrid.updateRow(index, row);
                         index++;
                      }
@@ -3136,7 +3421,39 @@ export class MainPanelComponent extends CoreBase implements OnInit {
             },
             {
                text: 'OK', click: async () => {
-                  //Call AddReclass for all selected
+                  //Call AddReclass for all selected pallet(s)
+                  for (let obj of this.qmsService.selectedPallets) {
+                     var pall = `${obj.data.PALL}`;
+                     var prop = `${obj.data.PROP}`;
+                     var itno = `${obj.data.ITNO}`;
+                     var camu = `${obj.data.CAMU}`;
+                     console.log("reclass pallet selected:" + pall + "_" + prop + "_" + itno);
+                     var res = await this.qmsService.GetQSTA(this.faci, this.qrid);
+                     const arr = res.split("_");
+                     console.log("QAPR: " + arr[1] + " QSTA: " + arr[0]);
+                     //Check QAPR; If 1 (Approved) or , call putaway
+                     if (arr[1] == "1" || arr[1] == "2") {
+                        var isOK = await this.qmsService.itemPutAwayPallet(this.company, this.itemno, this.bano, arr[1], camu);
+                        if (isOK) {
+                           this.showSuccess("Item putaway is successful.");
+                        }
+                        else {
+                           this.handleError("Item putaway failed.");
+                        }
+                     }
+                     //Check QSTA; If 3, enable buttons
+                     if (arr[0] == "3") {
+                        this.approvedFlag = true;
+                     }
+                     else this.approvedFlag = false;
+
+
+                     var pass = await this.qmsService.reportGradePallet(this.company, this.itemno, this.bano, itno, this.qrid, this.faci, pall, camu, itno);
+                     if (pass) {
+                        this.showSuccess("Report grade item successful for pallet " + pall);
+                     }
+                     else this.handleError("Report grade item not successful for pallet " + pall);
+                  }
                   dialogRef.close();
                   //dialogRef.close();
                }, isDefault: true
@@ -3150,6 +3467,55 @@ export class MainPanelComponent extends CoreBase implements OnInit {
 
    /****************************************************** INIT GRID OPTIONS ONLOAD *******************************************************/
    private initGrid() {
+
+      const getqstadesc = (row, cell, fieldValue, columnDef, rowData: any, api) => {
+         let qsta = rowData?.QSTA
+         switch (qsta) {
+            case "0":
+               return "0 - Pending"
+            case "1":
+               return "1 - Released"
+            case "2":
+               return "2 - In Process"
+            case "3":
+               return "3 - Completed"
+            case "4":
+               return "4 - Replaced"
+            case "5":
+               return "5 - Cancelled"
+            default:
+               return qsta
+         }
+      }
+      const getqaprdesc = (row, cell, fieldValue, columnDef, rowData: any, api) => {
+         let qapr = rowData?.QAPR
+         switch (qapr) {
+            case "0":
+               return "0 - Pending"
+            case "1":
+               return "1 - Approved"
+            case "2":
+               return "2 - Rejected"
+            default:
+               return qapr
+         }
+      }
+      const getqnxadesc = (row, cell, fieldValue, columnDef, rowData: any, api) => {
+         let qnxa = rowData?.QNXA
+         switch (qnxa) {
+            case "0":
+               return "0 - Start Testing"
+            case "1":
+               return "1 - Test"
+            case "2":
+               return "2 - Reclassify lot"
+            case "3":
+               return "3 - Finalize"
+            default:
+               return qnxa
+         }
+      }
+
       this.qridOptions = {
          selectable: 'single' as SohoDataGridSelectable,
          clickToSelect: true,
@@ -3160,13 +3526,16 @@ export class MainPanelComponent extends CoreBase implements OnInit {
          pagesize: 5,
          rowHeight: 'extra-small',
          columns: [
-            { field: 'FACI', id: 'FACI', name: 'Facility', filterType: 'text', sortable: true, resizable: true, width: '3' },
-            { field: 'QRID', id: 'QRID', name: 'Request ID', filterType: 'text', sortable: true, resizable: true, width: '3' },
-            { field: 'ITNO', id: 'ITNO', name: 'Item Number', filterType: 'text', sortable: true, resizable: true, width: '5' },
-            { field: 'BANO', id: 'BANO', name: 'Lot Number', filterType: 'text', sortable: true, resizable: true, width: '5' },
-            { field: 'QSTA', id: 'QSTA', name: 'Request Status', filterType: 'text', sortable: true, resizable: true, width: '3' },
-            { field: 'QAPR', id: 'QAPR', name: 'Approval Status', filterType: 'text', sortable: true, resizable: true, width: '3' },
-            { field: 'QNXA', id: 'QNXA', name: 'Next Action', filterType: 'text', sortable: true, resizable: true, width: '3' },
+            { field: 'FACI', id: 'FACI', name: 'Facility', filterType: 'text', sortable: true, resizable: true, minWidth: 2 },
+            { field: 'QRID', id: 'QRID', name: 'Request ID', filterType: 'text', sortable: true, resizable: true, minWidth: 3 },
+            { field: 'ITNO', id: 'ITNO', name: 'Item Number', filterType: 'text', sortable: true, resizable: true, minWidth: 4 },
+            { field: 'BANO', id: 'BANO', name: 'Lot Number', filterType: 'text', sortable: true, resizable: true, minWidth: 4 },
+            { field: 'QSTA', id: 'QSTA', name: 'Request Status', filterType: 'text', sortable: true, resizable: true, width: '3', hidden: true },
+            { field: 'QAPR', id: 'QAPR', name: 'Approval Status', filterType: 'text', sortable: true, resizable: true, width: '3', hidden: true },
+            { field: 'QNXA', id: 'QNXA', name: 'Next Action', filterType: 'text', sortable: true, resizable: true, width: '3', hidden: true },
+            { field: 'QSTADESC', id: 'QSTADESC', name: 'Request Status', filterType: 'text', sortable: true, resizable: true, minWidth: 4, formatter: getqstadesc },
+            { field: 'QAPRDESC', id: 'QAPRDESC', name: 'Approval Status', filterType: 'text', sortable: true, resizable: true, minWidth: 4, formatter: getqaprdesc },
+            { field: 'QNXADESC', id: 'QNXADESC', name: 'Next Action', filterType: 'text', sortable: true, resizable: true, minWidth: 4, formatter: getqnxadesc },
             { field: 'RORN', id: 'RORN', name: 'Ref Order No', filterType: 'text', sortable: true, resizable: true, width: '3', hidden: true },
          ],
          dataset: [],
@@ -3204,6 +3573,7 @@ export class MainPanelComponent extends CoreBase implements OnInit {
             { field: 'EXSQ', id: 'EXSQ', name: 'Ord', sortable: false, resizable: true, width: '1.5' },
             { field: 'TSTT', id: 'TSTT', name: 'Sts', sortable: false, resizable: true, width: '3' },
             { field: 'ITNO', id: 'ITNO', name: 'Item Number', sortable: false, resizable: true, width: '5' },
+            { field: 'CAMU', id: 'CAMU', name: 'Container', sortable: false, resizable: true, width: '3' },
             { field: 'SI01', id: 'SI01', name: 'Comments', sortable: false, editor: Soho.Editors.Textarea, resizable: true, width: '6.5', maxLength: 50 },
             { field: 'SPEC', id: 'SPEC', name: 'Specification', sortable: false, resizable: true, width: '1', hidden: true },
             { field: 'TSTY', id: 'TSTY', name: 'TestType', sortable: false, resizable: true, width: '1', hidden: true },

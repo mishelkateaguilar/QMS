@@ -4,7 +4,8 @@
          <p>Please choose pallet(s).</p>
          <div class="gradeGrid">
             <div id="gradeGrid" style="height: 210px;" #gradeGrid soho-datagrid [gridOptions]="gradeOptions"
-               soho-busyindicator [showSelectAllCheckBox]="true" selected [blockUI]="true" [displayDelay]="0">
+               soho-busyindicator [showSelectAllCheckBox]="true" selected [blockUI]="true" [displayDelay]="0"
+               (selected)="onSelectData($event)">
             </div>
          </div>
          <br />
